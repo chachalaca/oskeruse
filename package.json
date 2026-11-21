@@ -1,0 +1,21 @@
+{
+  "name": "oskeruse",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Katalog oskeruší a sadů – lokální PWA nad složkou synchronizovanou Syncthingem",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "serve": "node tools/serve.mjs",
+    "test": "node --test test/*.test.mjs",
+    "import-legacy": "node tools/import-legacy.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2",
+    "puppeteer-core": "^23.11.1"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4"
+  }
+}

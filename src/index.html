@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oskeruše – katalog a sady</title>
+<meta name="description" content="Katalog oskeruší Českého středohoří a evidence výsadeb">
+<meta name="theme-color" content="#8a3b1f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="app.css?v=__VERSION__">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>Oskeruše</h1>
+    <div class="sub">Katalog stromů <i>Sorbus domestica</i> a výsadeb</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="sAll">–</b><span>stromů</span></div>
+    <div class="stat"><b id="sLoc">–</b><span>lokalit</span></div>
+    <div class="stat"><b id="sOrch">–</b><span>sadů</span></div>
+  </div>
+  <div class="hdr-actions">
+    <span class="syncst" id="syncSt" title="Stav složky katalogu"></span>
+    <button class="btn primary" id="newTree" title="Přidat nový strom do katalogu">+ Nový strom</button>
+    <button class="btn icon" id="settingsBtn" title="Nastavení">⚙</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="search">
+      <input id="q" type="search" placeholder="Hledat název, inv. č., poznámku…">
+      <select id="sort">
+        <option value="inv">dle inv. č.</option>
+        <option value="name">dle názvu</option>
+        <option value="obv">dle obvodu</option>
+        <option value="alt">dle nadm. výšky</option>
+        <option value="h">dle výšky stromu</option>
+        <option value="lon">západ → východ</option>
+        <option value="upd">naposledy změněné</option>
+      </select>
+    </div>
+    <div class="filters">
+      <label class="full">Lokalita<select id="fArea"><option value="">všechny lokality</option></select></label>
+      <label>Typ<select id="fTyp"><option value="">všechny</option></select></label>
+      <label>Obvod kmene (cm)<span class="rng"><input id="fObvMin" type="number" placeholder="od" min="0" step="10"><input id="fObvMax" type="number" placeholder="do" min="0" step="10"></span></label>
+      <label class="full">Nadmořská výška (m)<span class="rng"><input id="fAltMin" type="number" placeholder="od" step="10"><input id="fAltMax" type="number" placeholder="do" step="10"></span></label>
+      <div class="fchips" id="fFlags"></div>
+      <div class="fcount"><span id="fCount"></span><button class="btn reset" id="fReset" data-reset>✕ Zrušit filtry</button></div>
+    </div>
+    <ul id="list"></ul>
+  </aside>
+
+  <main>
+    <div class="tabs">
+      <button class="tab on" data-v="vMap">Mapa</button>
+      <button class="tab" data-v="vLoc">Lokality</button>
+      <button class="tab" data-v="vOver">Přehled a grafy</button>
+      <button class="tab" data-v="vTbl">Tabulka</button>
+      <button class="tab" data-v="vOrch">Sady</button>
+      <button class="tab" data-v="vCheck">Kontrola dat <span class="badge" id="checkBadge"></span></button>
+    </div>
+
+    <div class="view on" id="vMap">
+      <div class="toolbar">
+        <label>Podklad
+          <select id="mapset"><option value="outdoor">Topografická</option><option value="aerial">Letecká</option></select></label>
+        <label>Barva bodů
+          <select id="colorBy">
+            <option value="obv">obvod kmene</option>
+            <option value="alt">nadmořská výška</option>
+            <option value="typ">typ stanoviště</option>
+            <option value="cat">kategorie</option>
+            <option value="year">rok posledního měření</option>
+            <option value="orch">genotyp ve vybraném sadu</option>
+          </select></label>
+        <label>Vrstva terénu
+          <select id="relief"><option value="">žádná</option><option value="dmr5g:GrayscaleHillshade">stínovaný reliéf</option><option value="dmr5g:SlopeRGBMap">sklonitost</option></select></label>
+        <label>Sad <select id="mapOrch"><option value="">žádný</option></select></label>
+        <label><input type="checkbox" id="sizeObv" checked> velikost dle obvodu</label>
+        <label><input type="checkbox" id="showLbl"> popisky</label>
+        <button class="btn" id="fitBtn">Zobrazit vybrané</button>
+        <button class="btn reset" data-reset>✕ Zrušit filtry</button>
+      </div>
+      <div id="map"></div>
+      <div class="legend" id="legend"></div>
+      <div class="pickbar" id="pickBar">Klikněte do mapy na místo stromu <button class="btn" id="pickCancel">Zrušit</button></div>
+    </div>
+
+    <div class="view" id="vLoc">
+      <div class="toolbar">
+        <label>Řadit
+          <select id="locSort">
+            <option value="n">dle počtu stromů</option><option value="name">dle názvu</option><option value="obv">dle největšího stromu</option>
+            <option value="alt">dle nadm. výšky</option><option value="lon">západ → východ</option>
+          </select></label>
+        <span class="muted">Zobrazeny jsou lokality s alespoň 2 stromy. Kliknutím lokalitu vyfiltrujete a zobrazíte na mapě. Proužek = rozložení obvodů stromů (0–400 cm).</span>
+      </div>
+      <div class="scrollv"><div class="locgrid" id="locGrid"></div></div>
+    </div>
+
+    <div class="view" id="vOver">
+      <div class="scrollv" id="overWrap">
+        <h3>Souhrn</h3>
+        <p class="note" id="overNote"></p>
+        <div class="kpis" id="kpis"></div>
+        <div class="charts">
+          <figure><h3>Obvod kmene</h3><p class="note">Počet stromů podle posledního změřeného obvodu (u vícekmenů ekvivalentní obvod), třídy po 25 cm.</p><svg id="cObv"></svg></figure>
+          <figure><h3>Nadmořská výška</h3><p class="note">Počet stromů podle nadmořské výšky, třídy po 25 m.</p><svg id="cAlt"></svg></figure>
+          <figure><h3>Nadmořská výška × obvod</h3><p class="note">Každý bod je strom, barva = typ stanoviště. Kliknutím otevřete detail.</p><svg id="cScat"></svg></figure>
+          <figure><h3>Nejmohutnější stromy</h3><p class="note">15 stromů s největším obvodem kmene.</p><svg id="cTop"></svg></figure>
+          <figure><h3>Nejbohatší lokality</h3><p class="note">Lokality s nejvíce evidovanými stromy. Kliknutím lokalitu vyfiltrujete.</p><svg id="cLoc"></svg></figure>
+          <figure><h3>Přírůstek obvodu</h3><p class="note">Stromy měřené opakovaně (odstup ≥ 3 roky): průměrný roční přírůstek obvodu vs. obvod při posledním měření.</p><svg id="cGrow"></svg></figure>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="vTbl">
+      <div class="toolbar">
+        <span id="tblInfo" class="muted"></span>
+        <button class="btn reset" data-reset>✕ Zrušit filtry</button>
+        <button class="btn" id="csvBtn">Stáhnout vybrané (CSV)</button>
+      </div>
+      <div class="scrollv" id="tblWrap" style="padding:0 0 10px"><table class="tbl" id="tbl"></table></div>
+    </div>
+
+    <div class="view" id="vOrch">
+      <div class="orch-layout">
+        <div class="orch-list" id="orchList"></div>
+        <div class="orch-main" id="orchMain"></div>
+      </div>
+    </div>
+
+    <div class="view" id="vCheck">
+      <div class="scrollv" id="checkWrap"></div>
+    </div>
+  </main>
+
+  <div class="detail" id="detail"><div class="empty">Vyberte strom v seznamu, na mapě nebo v tabulce.</div></div>
+</div>
+
+<div id="welcome" class="welcome" hidden></div>
+<div id="lb" class="lb" role="dialog" aria-modal="true" aria-label="Fotografie">
+  <button class="x" title="Zavřít (Esc)" id="lbX">✕</button>
+  <button class="pv" title="Předchozí (←)" id="lbPrev">‹</button>
+  <img id="lbImg" alt="">
+  <div class="cap" id="lbCap"></div>
+  <button class="nx" title="Další (→)" id="lbNext">›</button>
+</div>
+<div id="tip"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="upd" class="updbar" hidden>Je k dispozici nová verze aplikace. <button class="btn primary" id="updBtn">Načíst znovu</button></div>
+<script src="app.js?v=__VERSION__"></script>
+</body>
+</html>
